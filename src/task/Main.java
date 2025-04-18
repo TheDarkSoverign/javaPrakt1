@@ -23,7 +23,7 @@ public class Main {
         while (!"0".equals(s)) {
             System.out.println("Выберите пункт меню:");
             System.out.println("1. Вывести все таблицы.");
-            //System.out.println("2. Создать таблицу.");
+            System.out.println("2. Создать таблицу.");
             System.out.println("0. Выход");
             s = sc.next();
             try {
@@ -33,7 +33,7 @@ public class Main {
             }
             switch (x) {
                 case 1 -> tasks.task1();
-                //case 2 -> tasks.task2();
+                case 2 -> tasks.task2();
                 //case 3 -> tasks.task3();
                 //...
             }
@@ -48,11 +48,10 @@ public class Main {
 }
 
 class Task extends Main{
-    protected static String tableName;
+    static String table;
 
     public void task1(){
-        String query =
-                "SELECT table_name AS Названия_таблиц FROM information_schema.tables WHERE table_schema = 'public'";
+        String query = "SELECT table_name AS Названия_таблиц FROM information_schema.tables WHERE table_schema = 'public'";
         try {
             PreparedStatement pst = con.prepareStatement(query);
             ResultSet rs = pst.executeQuery();
@@ -66,13 +65,21 @@ class Task extends Main{
                 System.out.println("Не удалось вывести результат, " + e.getMessage());
             }
         } catch (SQLException e) {
-            System.out.println("Не удалось выполнить запрос, " +e.getMessage());
+            System.out.println("Не удалось выполнить запрос, " + e.getMessage());
         }
-
     }
 
     public void task2(){
-
+        System.out.print("Введите название таблицы: ");
+        table = sc.next();
+        String query = "CREATE TABLE IF NOT EXISTS ? (id SERIAL, sum FLOAT, sub FLOAT, mult FLOAT, div FLOAT, module_div FLOAT, abs FLOAT, pow FLOAT)";
+        try {
+            PreparedStatement pst = con.prepareStatement(query);
+            pst.setString(1, table);
+            pst.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println("Не удалось выполнить запрос, " + e.getMessage());
+        }
     }
 
     public void task3(){
