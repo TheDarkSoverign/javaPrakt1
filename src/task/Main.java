@@ -4,10 +4,8 @@ import java.sql.*;
 import java.util.Scanner;
 
 public class Main {
-    protected Scanner sc = new Scanner(System.in);
+    protected static Scanner sc = new Scanner(System.in);
     protected static Connection con;
-    protected static Statement st;
-    protected static ResultSet rs;
 
     static String Url = "jdbc:postgresql://localhost:5432/postgres";
 
@@ -18,17 +16,58 @@ public class Main {
             System.out.println("Не удалось подключиться к базе данных: "+ e.getMessage());
         }
     }
+    protected static void menu() {
+        int x = 0;
+        String s = "";
+        Task tasks = new Task();
+        while (!"0".equals(s)) {
+            System.out.println("Выберите пункт меню:");
+            System.out.println("1. Вывести все таблицы.");
+            //System.out.println("2. Создать таблицу.");
+            System.out.println("0. Выход");
+            s = sc.next();
+            try {
+                x = Integer.parseInt(s);
+            } catch (NumberFormatException e) {
+                System.out.println("Неверный формат ввода");
+            }
+            switch (x) {
+                case 1 -> tasks.task1();
+                //case 2 -> tasks.task2();
+                //case 3 -> tasks.task3();
+                //...
+            }
+        }
+        System.out.println("Пока!");
+    }
 
     public static void main(String[] args) {
-
+        System.out.println("Подключились к БД. ");
+        menu();
     }
 }
 
 class Task extends Main{
     protected static String tableName;
 
-
     public void task1(){
+        String query =
+                "SELECT table_name AS Названия_таблиц FROM information_schema.tables WHERE table_schema = 'public'";
+        try {
+            PreparedStatement pst = con.prepareStatement(query);
+            ResultSet rs = pst.executeQuery();
+            try {
+                System.out.println("Список таблиц:");
+                while (rs.next()) {
+                    String tableName = rs.getString("Названия_таблиц");
+                    System.out.println(tableName);
+                }
+            } catch (SQLException e) {
+                System.out.println("Не удалось вывести результат, " + e.getMessage());
+            }
+        } catch (SQLException e) {
+            System.out.println("Не удалось выполнить запрос, " +e.getMessage());
+        }
 
     }
 
