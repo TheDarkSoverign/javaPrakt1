@@ -37,6 +37,7 @@ public class Main {
                 //case 3 -> tasks.task3();
                 //...
             }
+            x = 0;
         }
         System.out.println("Пока!");
     }
@@ -72,11 +73,11 @@ class Task extends Main{
     public void task2(){
         System.out.print("Введите название таблицы: ");
         table = sc.next();
-        String query = "CREATE TABLE IF NOT EXISTS ? (id SERIAL, sum FLOAT, sub FLOAT, mult FLOAT, div FLOAT, module_div FLOAT, abs FLOAT, pow FLOAT)";
+        String query = "CREATE TABLE IF NOT EXISTS '" + table + "' (id SERIAL, sum FLOAT, sub FLOAT, mult FLOAT, div FLOAT, module_div FLOAT, abs FLOAT, pow FLOAT)";
         try {
             PreparedStatement pst = con.prepareStatement(query);
-            pst.setString(1, table);
             pst.executeUpdate();
+            System.out.println("Таблица " + table + " успешно создана");
         } catch (SQLException e) {
             System.out.println("Не удалось выполнить запрос, " + e.getMessage());
         }
