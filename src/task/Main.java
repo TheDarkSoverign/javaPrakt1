@@ -1,14 +1,22 @@
 package task;
 
 import java.sql.*;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import static java.lang.Math.abs;
 import static java.lang.Math.pow;
 
+
 public class Main {
     protected static Scanner sc = new Scanner(System.in);
     protected static Connection con;
+    protected static String table = "task1";
 
     static String Url = "jdbc:postgresql://localhost:5432/postgres";
 
@@ -18,14 +26,25 @@ public class Main {
         } catch (SQLException e) {
             System.out.println("Не удалось подключиться к базе данных: " + e.getMessage());
         }
+
+        String query = "CREATE TABLE IF NOT EXISTS task1 (id SERIAL, sum INT, sub INT, mul INT, div INT, mod INT, abs_1 INT, abs_2 INT, pow INT)";
+        try {
+            Statement st = con.createStatement();
+            st.executeUpdate(query);
+            table = "task1";
+            System.out.println("Используется таблица по умолчанию - " + table);
+        } catch (SQLException e) {
+            System.out.println("Не удалось использовать таблицу по умолчанию, " + e.getMessage());
+        }
     }
 
     protected static void menu() {
         int x = 0;
         String s = "";
         Task tasks = new Task();
+        ExportToExcel export = new ExportToExcel();
         while (!"0".equals(s)) {
-            System.out.println("Выберите пункт меню:");
+            System.out.println("Меню программы:");
             System.out.println("1. Вывести все таблицы.");
             System.out.println("2. Создать таблицу.");
             System.out.println("3. Cложение двух чисел.");
@@ -36,7 +55,9 @@ public class Main {
             System.out.println("8. Модуль двух чисел");
             System.out.println("9. Число в степени другого числа");
             System.out.println("10. Записать результаты в таблицу");
+            System.out.println("11. Записать данные в Excel");
             System.out.println("0. Выход");
+            System.out.print("Выберите пункт меню: ");
             s = sc.next();
             try {
                 x = Integer.parseInt(s);
@@ -53,7 +74,14 @@ public class Main {
                 case 7 -> tasks.task7();
                 case 8 -> tasks.task8();
                 case 9 -> tasks.task9();
-                case 10 -> tasks.task10();
+                case 10 -> tasks.insertData();
+                case 11 -> {
+                    System.out.print("Введите путь к файлу: ");
+                    String filepath = sc.nextLine();
+
+                    export.exportData(table, filepath);
+                }
+                default -> System.out.println("Неправильно выбран пункт меню! Попробуйте еще раз...");
             }
             x = 0;
         }
@@ -67,7 +95,6 @@ public class Main {
 }
 
 class Task extends Main {
-    private static String table = "task1";
     static int firstNum;
     static int secondNum;
 
@@ -80,23 +107,11 @@ class Task extends Main {
     static Object abs_2 = null;
     static Object pow = null;
 
-    static {
-        String query = "CREATE TABLE IF NOT EXISTS task1 (id SERIAL, sum INT, sub INT, mul INT, div INT, mod INT, abs_1 INT, abs_2 INT, pow INT)";
-        try {
-            Statement st = con.createStatement();
-            st.executeUpdate(query);
-            table = "task1";
-            System.out.println("Используется таблица по умолчанию - " + table);
-        } catch (SQLException e) {
-            System.out.println("Не удалось использовать таблицу по умолчанию, " + e.getMessage());
-        }
-    }
-
     public void task1() {
         String query = "SELECT table_name AS Названия_таблиц FROM information_schema.tables WHERE table_schema = 'public'";
         try {
-            Statement pst = con.createStatement();
-            ResultSet rs = pst.executeQuery(query);
+            Statement st = con.createStatement();
+            ResultSet rs = st.executeQuery(query);
             try {
                 System.out.println("Список таблиц:");
                 while (rs.next()) {
@@ -174,7 +189,7 @@ class Task extends Main {
         System.out.println("Модуль первого числа: " + abs_1);
 
         abs_2 = abs(secondNum);
-        System.out.println("Модуль второго числа: "+ abs_2);
+        System.out.println("Модуль второго числа: " + abs_2);
     }
 
     public void task9() {
@@ -185,10 +200,9 @@ class Task extends Main {
         System.out.println("Число в степени: " + pow);
     }
 
-    public void task10() {
-        String query = "INSERT INTO " + table + " (sum, sub, mult, div, mod, abs_1, abs_2, pow) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        try {
-            PreparedStatement pst = con.prepareStatement(query);
+    public void insertData() {
+        String query = "INSERT INTO " + table + " (sum, sub, mul, div, mod, abs_1, abs_2, pow) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement pst = con.prepareStatement(query)) {
             pst.setObject(1, sum);
             pst.setObject(2, sub);
             pst.setObject(3, mul);
@@ -199,7 +213,8 @@ class Task extends Main {
             pst.setObject(8, pow);
             pst.executeUpdate();
             System.out.println("Все выполненные результаты добавлены в таблицу!");
-        } catch (SQLException e) {
+        } catch (
+                SQLException e) {
             System.out.println("Не удалось выполнить запрос, " + e.getMessage());
         }
     }
@@ -229,3 +244,55 @@ class Task extends Main {
     }
 }
 
+class ExportToExcel extends Main {
+    String filepath;
+
+    public void exportData(String table, String filepath) {
+        this.filepath = filepath;
+
+        String printAll = "SELECT * FROM " + table;
+        try (PreparedStatement pst = con.prepareStatement(printAll); ResultSet rs = pst.executeQuery()) {
+            Workbook wb = new XSSFWorkbook();
+            Sheet sheet = wb.createSheet("task 1");
+            Row row = sheet.createRow(0);
+            row.createCell(0).setCellValue(rs.getMetaData().getColumnName(0));
+            row.createCell(1).setCellValue(rs.getMetaData().getColumnName(1));
+            row.createCell(2).setCellValue(rs.getMetaData().getColumnName(2));
+            row.createCell(3).setCellValue(rs.getMetaData().getColumnName(3));
+            row.createCell(4).setCellValue(rs.getMetaData().getColumnName(4));
+            row.createCell(5).setCellValue(rs.getMetaData().getColumnName(5));
+            row.createCell(6).setCellValue(rs.getMetaData().getColumnName(6));
+            row.createCell(7).setCellValue(rs.getMetaData().getColumnName(7));
+            row.createCell(8).setCellValue(rs.getMetaData().getColumnName(8));
+
+            int rowIndex = 1;
+            while (rs.next()) {
+                Row row1 = sheet.createRow(rowIndex++);
+                row1.createCell(0).setCellValue(rs.getInt(0));
+                row1.createCell(1).setCellValue(rs.getInt(1));
+                row1.createCell(2).setCellValue(rs.getInt(2));
+                row1.createCell(3).setCellValue(rs.getInt(3));
+                row1.createCell(4).setCellValue(rs.getInt(4));
+                row1.createCell(5).setCellValue(rs.getInt(5));
+                row1.createCell(6).setCellValue(rs.getInt(6));
+                row1.createCell(7).setCellValue(rs.getInt(7));
+                row1.createCell(8).setCellValue(rs.getInt(8));
+
+            }
+            int columnCount = sheet.getRow(0).getPhysicalNumberOfCells();
+            for (int i = 0; i < columnCount; i++) {
+                sheet.autoSizeColumn(i);
+            }
+            try (FileOutputStream fos = new FileOutputStream(filepath)) {
+                wb.write(fos);
+            } catch (IOException e) {
+                System.out.println("Ошибка при записи Excel-файла: " + e);
+            } finally {
+                wb.close();
+                System.out.println("Данные успешно сохранены в Excel-файл: " + filepath);
+            }
+        } catch (IOException | SQLException e) {
+            System.out.println("Ошибка при экспорте данных: " + e);
+        }
+    }
+}

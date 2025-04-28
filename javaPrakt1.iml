@@ -8,5 +8,9 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="postgresql-42.7.5" level="application" />
+    <orderEntry type="library" name="slf4j-simple-2.0.17" level="application" />
+    <orderEntry type="library" name="poi-ooxml-5.4.1" level="application" />
+    <orderEntry type="library" name="poi-5.4.1" level="application" />
+    <orderEntry type="library" name="xmlbeans-5.3.0" level="application" />
   </component>
 </module>
